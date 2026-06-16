@@ -7,6 +7,9 @@ This project analyzes over **1 million Lending Club loan records** to identify k
 The project combines **Python, SQL Server, Data Modeling, and Power BI** to build an end-to-end analytics solution from raw data ingestion to executive reporting.
 
 ---
+## Preview
+<img width="1918" height="900" alt="image" src="https://github.com/user-attachments/assets/29356fc8-3bf6-4f1e-82a4-846494f8c91d" />
+
 
 ## Business Problem
 
@@ -100,15 +103,7 @@ Additional analytical layer containing derived business metrics such as loan out
 
 ### Star Schema
 
-```text
-               dim_date
-                   |
-                   |
-dim_grade ---- fact_loans ---- dim_geography
-                   |
-                   |
-             dim_purpose
-```
+<img width="932" height="715" alt="image" src="https://github.com/user-attachments/assets/a3dcf8be-f7c9-492f-9b73-6c10f543ce7d" />
 
 ---
 

@@ -1,0 +1,74 @@
+table dim_date
+	lineageTag: a6494d59-7caa-41c4-b0d4-a1b81f553401
+
+	column date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 38f12c0f-dc88-4379-b72d-47ae635886e1
+		summarizeBy: sum
+		sourceColumn: date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column issue_d
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 97984239-ca13-436d-b616-c437f226626c
+		summarizeBy: none
+		sourceColumn: issue_d
+
+		variation Variation
+			isDefault
+			relationship: c385bc0d-2f7c-4fd5-a9e5-4d5f371897ec
+			defaultHierarchy: LocalDateTable_413ab506-2da0-495c-8a4c-f4be485f4dce.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column loan_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 7ab40356-265d-4a78-bf1a-3aeee33203be
+		summarizeBy: sum
+		sourceColumn: loan_year
+
+		annotation SummarizationSetBy = Automatic
+
+	column loan_month
+		dataType: int64
+		formatString: 0
+		lineageTag: d8429736-abee-4486-8211-33c3e8abb343
+		summarizeBy: sum
+		sourceColumn: loan_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name
+		dataType: string
+		lineageTag: a6f569b0-4cfe-4cfc-a1ac-e9003cc73a67
+		summarizeBy: none
+		sourceColumn: month_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column loan_quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: 4455b540-6691-4464-a4df-168658b9f0df
+		summarizeBy: sum
+		sourceColumn: loan_quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("Surya\SQLEXPRESS", "Finance"),
+				    dbo_dim_date = Source{[Schema="dbo",Item="dim_date"]}[Data]
+				in
+				    dbo_dim_date
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "position": {
+    "x": 35,
+    "y": 860,
+    "width": 218,
+    "height": 170,
+    "tabOrder": 20000,
+    "z": 20000
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "\ud83d\udca1 Tips\n\n",
+                    "textStyle": {
+                      "fontFamily": "Segoe UI, sans-serif",
+                      "fontSize": "11pt",
+                      "fontWeight": "bold",
+                      "color": "#0369A1"
+                    }
+                  },
+                  {
+                    "value": "Use filters to slice loan volume and risk metrics across years, borrower grades, and loan purposes.",
+                    "textStyle": {
+                      "fontFamily": "Segoe UI, sans-serif",
+                      "fontSize": "10pt",
+                      "color": "#0C4A6E"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#F0F9FF'"
+                    }
+                  }
+                }
+              }
+            },
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#BAE6FD'"
+                    }
+                  }
+                }
+              }
+            },
+            "radius": {
+              "expr": {
+                "Literal": {
+                  "Value": "8D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "name": "d78908502e0945ba93d6",
+  "drillFilterOtherVisuals": true
+}

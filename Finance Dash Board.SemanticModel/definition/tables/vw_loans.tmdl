@@ -1,0 +1,470 @@
+table vw_loans
+	lineageTag: 7f6c777c-4918-417a-a517-d381ee7a743b
+
+	/// Total number of loans issued (matches all active filters).
+	measure 'Total Loans' = COUNTROWS(vw_loans)
+		formatString: #,##0
+		displayFolder: Executive Overview
+		lineageTag: 2f942557-89c2-46f9-86d9-f68b09659b2c
+
+	/// Total funded amount across all loans, displayed in billions.
+	measure 'Total Funded Amount' = SUM(vw_loans[funded_amnt])
+		formatString: $#,##0.00
+		displayFolder: Executive Overview
+		lineageTag: b6dfeb45-ddd7-49ad-a81e-e1ace2265fa0
+
+	/// Average interest rate. int_rate is stored as a percentage value (e.g. 12.8 = 12.8%), so this uses a literal % suffix rather than percentage formatting.
+	measure 'Average Interest Rate' = AVERAGE(vw_loans[int_rate])
+		formatString: 0.0"%"
+		displayFolder: Executive Overview
+		lineageTag: 161d483d-43db-4745-b1e3-a7aa8f147f0f
+
+	/// Average borrower annual income, displayed in thousands.
+	measure 'Average Annual Income' = AVERAGE(vw_loans[annual_inc])
+		formatString: $#,##0.00
+		displayFolder: Executive Overview
+		lineageTag: 59c3a627-dd87-4bd8-ace6-6e177496ca37
+
+	/// Count of loans classified as Good outcome.
+	measure 'Good Loan Count' = CALCULATE(COUNTROWS(vw_loans), vw_loans[loan_outcome] = "Good")
+		formatString: #,##0
+		displayFolder: Executive Overview
+		lineageTag: 483e05b6-a638-43cf-9770-d8d9cae57d5d
+
+	/// Count of loans classified as Bad outcome.
+	measure 'Bad Loan Count' = CALCULATE(COUNTROWS(vw_loans), vw_loans[loan_outcome] = "Bad")
+		formatString: #,##0
+		displayFolder: Executive Overview
+		lineageTag: fd606c17-ab41-4268-a7c2-47177455c691
+
+	/// Share of loans that are Good, as a % of total loans.
+	measure 'Good Loan %' = DIVIDE([Good Loan Count], [Total Loans], 0)
+		formatString: 0.00%
+		displayFolder: Executive Overview
+		lineageTag: 5281eccf-f3b2-4d56-a86e-f9631203525a
+
+	/// Share of loans that are Bad, as a % of total loans.
+	measure 'Bad Loan %' = DIVIDE([Bad Loan Count], [Total Loans], 0)
+		formatString: 0.00%
+		displayFolder: Executive Overview
+		lineageTag: 91d01d55-d156-4984-bf0e-77a6e3103636
+
+	/// Share of loans that are Bad (defaulted/charged off/delinquent), i.e. the portfolio default rate.
+	measure 'Default Rate %' = DIVIDE([Bad Loan Count], [Total Loans], 0)
+		formatString: 0.00%
+		displayFolder: Credit Risk Analysis
+		lineageTag: 676043d4-f5d7-4ee7-9f74-31bfc86698cb
+
+	/// Portfolio-wide default rate, ignoring Grade/Purpose/State filters. Used as the benchmark line for high-risk comparisons.
+	measure 'Overall Default Rate %' = CALCULATE([Default Rate %], ALL(dim_grade), ALL(dim_purpose), ALL(dim_geography))
+		formatString: 0.00%
+		displayFolder: Credit Risk Analysis
+		lineageTag: 62425896-8b33-4249-b353-cbfd444cfe82
+
+	/// Total loans belonging to grades whose own default rate exceeds 25%. Dynamic: recalculates which grades qualify under current filters.
+	measure 'High Risk Loans (Default Rate > 25%)' = SUMX(VALUES(dim_grade[grade]), IF([Default Rate %] > 0.25, [Total Loans], 0))
+		formatString: #,##0
+		displayFolder: Credit Risk Analysis
+		lineageTag: 8007c882-c68d-4ef8-a7d9-2e052c43a118
+
+	/// Flags whether the current row's category (grade, purpose, or state - whatever is on the visual) has a default rate above the overall portfolio default rate. Use as a visual-level filter (=1) on High Risk tables.
+	measure 'High Risk Flag (vs Overall)' = IF([Default Rate %] > [Overall Default Rate %], 1, 0)
+		formatString: 0
+		displayFolder: Credit Risk Analysis
+		lineageTag: e12a88d2-59b5-44d8-b81e-1a2dbc298b1a
+
+	/// Average borrower FICO score (midpoint of low/high range).
+	measure 'Average FICO Score' = AVERAGE(vw_loans[FICO Score])
+		formatString: 0
+		displayFolder: Borrower Analysis
+		lineageTag: 12a3af8d-581a-45c4-9547-4762fbd9bf86
+
+	/// Average debt-to-income ratio. dti is stored as a percentage value directly, so this uses a literal % suffix. Note: a small number of rows (~1,300) have DTI outliers up to 999, likely data-entry placeholders for missing values.
+	measure 'Average DTI' = AVERAGE(vw_loans[dti])
+		formatString: 0.00"%"
+		displayFolder: Borrower Analysis
+		lineageTag: 59d8ef1d-e02c-48e8-89db-54d83dda91e6
+
+	/// Distinct count of states with at least one loan under current filters.
+	measure 'States Represented' = DISTINCTCOUNT(vw_loans[addr_state])
+		formatString: 0
+		displayFolder: Geographic Analysis
+		lineageTag: 01021a4c-9e5c-4edf-80e4-8f9ada410dff
+
+	/// Name of the state with the most loans, among states currently visible under filters.
+	measure 'Top State by Loans' = VAR t = TOPN(1, VALUES(dim_geography[addr_state]), [Total Loans], DESC) RETURN CONCATENATEX(t, dim_geography[addr_state])
+		displayFolder: Geographic Analysis
+		lineageTag: 4ffba613-e15e-4c8d-8f9d-60d37f9c1230
+
+	/// Loan count for the top state by volume.
+	measure 'Top State Loan Count' = MAXX(VALUES(dim_geography[addr_state]), [Total Loans])
+		formatString: #,##0
+		displayFolder: Geographic Analysis
+		lineageTag: 30f7e127-e659-4015-9bb1-f15a4d1d7d85
+
+	/// State with the highest default rate, restricted to states with at least 500 loans to avoid small-sample noise skewing the ranking.
+	measure 'Highest Default Rate State' = VAR t = TOPN(1, FILTER(VALUES(dim_geography[addr_state]), CALCULATE([Total Loans]) >= 500), [Default Rate %], DESC) RETURN CONCATENATEX(t, dim_geography[addr_state])
+		displayFolder: Geographic Analysis
+		lineageTag: 27a67b79-eab9-4b82-99e5-d9191e3bb368
+
+	/// Default rate value for the highest-risk qualifying state (min. 500 loans).
+	measure 'Highest Default Rate Value' = MAXX(FILTER(VALUES(dim_geography[addr_state]), [Total Loans] >= 500), [Default Rate %])
+		formatString: 0.00%
+		displayFolder: Geographic Analysis
+		lineageTag: 5dadd6d7-1a7c-48dd-8d9a-bb6b0029bcb7
+
+	/// Each state's share of total funded amount, ignoring the state filter for the denominator.
+	measure '% of Total Funded Amount' = DIVIDE([Total Funded Amount], CALCULATE([Total Funded Amount], ALL(dim_geography)), 0)
+		formatString: 0.00%
+		displayFolder: Geographic Analysis
+		lineageTag: a5e4d9de-9048-4e34-a6df-90f0f5492d87
+
+	/// Share of loans across risk segment / geographic buckets.
+	measure 'Share of Loans %' = DIVIDE([Total Loans], CALCULATE([Total Loans], ALL(dim_geography)), 0)
+		formatString: 0.0%
+		displayFolder: Geographic Analysis
+		lineageTag: b5e4d9de-9048-4e34-a6df-90f0f5492d88
+
+	/// Distinct count of states in current selection.
+	measure 'State Count' = DISTINCTCOUNT(dim_geography[addr_state])
+		formatString: #,##0
+		displayFolder: Geographic Analysis
+		lineageTag: c5e4d9de-9048-4e34-a6df-90f0f5492d89
+
+	column loan_amnt
+		dataType: double
+		lineageTag: 80854ff3-aeb0-46e3-a725-cec2ffd8ca33
+		summarizeBy: sum
+		sourceColumn: loan_amnt
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column funded_amnt
+		dataType: double
+		lineageTag: 8dd35fa2-5b5f-46a5-b00d-c09f4acf3fc1
+		summarizeBy: sum
+		sourceColumn: funded_amnt
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column funded_amnt_inv
+		dataType: double
+		lineageTag: 9360d5c9-5348-4773-9358-cbd9e3c0c95f
+		summarizeBy: sum
+		sourceColumn: funded_amnt_inv
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column term
+		dataType: string
+		lineageTag: 31b15d91-0f78-4fdf-a662-38add04dfa9b
+		summarizeBy: none
+		sourceColumn: term
+
+		annotation SummarizationSetBy = Automatic
+
+	column int_rate
+		dataType: double
+		lineageTag: 5e5cb4ce-df62-4d14-b5a9-c76ade9ef992
+		summarizeBy: sum
+		sourceColumn: int_rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column installment
+		dataType: double
+		lineageTag: 6c60d229-e09d-44f1-a44f-5c6321099989
+		summarizeBy: sum
+		sourceColumn: installment
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column grade
+		dataType: string
+		lineageTag: 35cbd5a8-f69a-4a9a-9da5-04c5632cab6b
+		summarizeBy: none
+		sourceColumn: grade
+
+		annotation SummarizationSetBy = Automatic
+
+	column sub_grade
+		dataType: string
+		lineageTag: 8caa01ac-b2ff-447f-a199-892654b3ea06
+		summarizeBy: none
+		sourceColumn: sub_grade
+
+		annotation SummarizationSetBy = Automatic
+
+	column emp_title
+		dataType: string
+		lineageTag: 8dadd718-88a2-47b4-af43-ba855df5b785
+		summarizeBy: none
+		sourceColumn: emp_title
+
+		annotation SummarizationSetBy = Automatic
+
+	column emp_length
+		dataType: string
+		lineageTag: 4477e864-d79d-40c1-9e45-72182d4104f0
+		summarizeBy: none
+		sourceColumn: emp_length
+
+		annotation SummarizationSetBy = Automatic
+
+	column home_ownership
+		dataType: string
+		lineageTag: 7951029f-c2d2-4991-b521-8b0fcb88ec21
+		summarizeBy: none
+		sourceColumn: home_ownership
+
+		annotation SummarizationSetBy = Automatic
+
+	column annual_inc
+		dataType: double
+		lineageTag: df07eeda-2865-4709-bd80-2e9a8ad0ee28
+		summarizeBy: sum
+		sourceColumn: annual_inc
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column verification_status
+		dataType: string
+		lineageTag: ea875cc7-e8d6-4a43-a162-e37a5fd11288
+		summarizeBy: none
+		sourceColumn: verification_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column issue_d
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 047655e7-7b87-4bdb-ac40-591ba908eef6
+		summarizeBy: none
+		sourceColumn: issue_d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column loan_status
+		dataType: string
+		lineageTag: 85948753-bea3-4d33-96ad-3265e9535529
+		summarizeBy: none
+		sourceColumn: loan_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column purpose
+		dataType: string
+		lineageTag: 960e8ac2-e013-4504-900b-e2e913c5f874
+		summarizeBy: none
+		sourceColumn: purpose
+
+		annotation SummarizationSetBy = Automatic
+
+	column addr_state
+		dataType: string
+		lineageTag: 551f9213-9d44-4247-965c-5a9c874c3066
+		summarizeBy: none
+		sourceColumn: addr_state
+
+		annotation SummarizationSetBy = Automatic
+
+	column dti
+		dataType: double
+		lineageTag: 4e49ded5-2f09-405c-8fb4-da9830f1e0d8
+		summarizeBy: sum
+		sourceColumn: dti
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column delinq_2yrs
+		dataType: double
+		lineageTag: e161c216-3d18-4b60-a214-ae6167cc0de2
+		summarizeBy: sum
+		sourceColumn: delinq_2yrs
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column fico_range_low
+		dataType: double
+		lineageTag: 06d28fff-93e9-4e15-a020-36aabbdf3847
+		summarizeBy: sum
+		sourceColumn: fico_range_low
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column fico_range_high
+		dataType: double
+		lineageTag: c1b75c33-08fa-4f45-9c4e-19339e57ebc8
+		summarizeBy: sum
+		sourceColumn: fico_range_high
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column open_acc
+		dataType: double
+		lineageTag: 1a29cf67-2c10-40b8-b79f-94f230f05134
+		summarizeBy: sum
+		sourceColumn: open_acc
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column pub_rec
+		dataType: double
+		lineageTag: 7c20e81c-0e9f-486c-8c73-4ab564b38908
+		summarizeBy: sum
+		sourceColumn: pub_rec
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_acc
+		dataType: double
+		lineageTag: c3ebd6eb-f640-4a18-840f-6ec14799f628
+		summarizeBy: sum
+		sourceColumn: total_acc
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column bc_open_to_buy
+		dataType: double
+		lineageTag: dfbf37a3-0df5-4bdd-a2fb-8892dbca89b1
+		summarizeBy: sum
+		sourceColumn: bc_open_to_buy
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column bc_util
+		dataType: double
+		lineageTag: df3e86f6-7e67-40f2-a5df-838e2b20b2f7
+		summarizeBy: sum
+		sourceColumn: bc_util
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column loan_outcome
+		dataType: string
+		lineageTag: 1c4c001a-5de4-4dd0-935b-dff666efa4af
+		summarizeBy: none
+		sourceColumn: loan_outcome
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Per-loan FICO score, midpoint of the low/high range.
+	column 'FICO Score' = (vw_loans[fico_range_low] + vw_loans[fico_range_high]) / 2
+		dataType: double
+		formatString: 0
+		displayFolder: Borrower Analysis
+		lineageTag: 38ba2c4e-6ce7-4df0-a33b-10139eb42d66
+
+	/// Hidden sort key for FICO Score Range.
+	column 'FICO Score Range Sort' = SWITCH(TRUE(), [FICO Score]<680,1, [FICO Score]<700,2, [FICO Score]<720,3, [FICO Score]<740,4, [FICO Score]<760,5, [FICO Score]<780,6, 7)
+		dataType: int64
+		isHidden
+		displayFolder: Borrower Analysis
+		lineageTag: 8476c41e-a9c3-4bc1-91b4-d4f994a58f71
+
+	/// FICO score bucketed into ranges. Adjusted to this dataset's actual range (660-850) rather than the full theoretical FICO scale (300-850), since no loans fall below 660.
+	column 'FICO Score Range' = SWITCH(TRUE(), [FICO Score]<680,"<680", [FICO Score]<700,"680-699", [FICO Score]<720,"700-719", [FICO Score]<740,"720-739", [FICO Score]<760,"740-759", [FICO Score]<780,"760-779", "780+")
+		dataType: string
+		displayFolder: Borrower Analysis
+		lineageTag: b9d6606d-c1c6-42c7-9d8e-1e49d5fe7a32
+		sortByColumn: 'FICO Score Range Sort'
+
+	/// Hidden sort key for DTI Range.
+	column 'DTI Range Sort' = SWITCH(TRUE(), vw_loans[dti]<5,1, vw_loans[dti]<10,2, vw_loans[dti]<15,3, vw_loans[dti]<20,4, vw_loans[dti]<25,5, 6)
+		dataType: int64
+		isHidden
+		displayFolder: Borrower Analysis
+		lineageTag: 8b6a2b31-778f-458f-90ab-43bb17f60f0f
+
+	/// Debt-to-income ratio bucketed into ranges.
+	column 'DTI Range' = SWITCH(TRUE(), vw_loans[dti]<5,"0-5%", vw_loans[dti]<10,"5-10%", vw_loans[dti]<15,"10-15%", vw_loans[dti]<20,"15-20%", vw_loans[dti]<25,"20-25%", ">25%")
+		dataType: string
+		displayFolder: Borrower Analysis
+		lineageTag: e45ce962-409d-425c-940f-22e7ec9ebf0f
+		sortByColumn: 'DTI Range Sort'
+
+	/// Hidden sort key for Income Range.
+	column 'Income Range Sort' = SWITCH(TRUE(), vw_loans[annual_inc]<25000,1, vw_loans[annual_inc]<50000,2, vw_loans[annual_inc]<75000,3, vw_loans[annual_inc]<100000,4, 5)
+		dataType: int64
+		isHidden
+		displayFolder: Borrower Analysis
+		lineageTag: 8e9730f2-7f31-49a0-a0a8-d2a71d52107f
+
+	/// Annual income bucketed into ranges.
+	column 'Income Range' = SWITCH(TRUE(), vw_loans[annual_inc]<25000,"<25K", vw_loans[annual_inc]<50000,"25K-50K", vw_loans[annual_inc]<75000,"50K-75K", vw_loans[annual_inc]<100000,"75K-100K", "100K+")
+		dataType: string
+		displayFolder: Borrower Analysis
+		lineageTag: 4d4e3205-8c87-410e-b485-814d20fd4535
+		sortByColumn: 'Income Range Sort'
+
+	/// Hidden sort key for Employment Length Group.
+	column 'Employment Length Sort' = SWITCH(TRUE(), vw_loans[emp_length]="< 1 year",1, vw_loans[emp_length] IN {"1 year","2 years","3 years"},2, vw_loans[emp_length] IN {"4 years","5 years"},3, vw_loans[emp_length] IN {"6 years","7 years","8 years","9 years"},4, vw_loans[emp_length]="10+ years",5, 6)
+		dataType: int64
+		isHidden
+		displayFolder: Borrower Analysis
+		lineageTag: 984fc294-660e-4af2-8fe0-61d580654770
+
+	/// Raw emp_length text grouped into 5 bands. ~69K rows have no reported emp_length and fall into Unknown.
+	column 'Employment Length Group' = SWITCH(TRUE(), vw_loans[emp_length]="< 1 year","<1yr", vw_loans[emp_length] IN {"1 year","2 years","3 years"},"1-3 years", vw_loans[emp_length] IN {"4 years","5 years"},"3-5 years", vw_loans[emp_length] IN {"6 years","7 years","8 years","9 years"},"5-10 years", vw_loans[emp_length]="10+ years","10+ years", "Unknown")
+		dataType: string
+		displayFolder: Borrower Analysis
+		lineageTag: 622f3e80-aa99-4bcf-9ca7-67c8f8aea010
+		sortByColumn: 'Employment Length Sort'
+
+	/// Hidden sort key for Loan Amount Range.
+	column 'Loan Amount Sort' = SWITCH(TRUE(), vw_loans[loan_amnt]<5000,1, vw_loans[loan_amnt]<10000,2, vw_loans[loan_amnt]<20000,3, vw_loans[loan_amnt]<30000,4, 5)
+		dataType: int64
+		isHidden
+		displayFolder: Borrower Analysis
+		lineageTag: 1df43373-ee7f-4c33-b5fe-d30b51248b18
+
+	/// Loan amount bucketed into ranges.
+	column 'Loan Amount Range' = SWITCH(TRUE(), vw_loans[loan_amnt]<5000,"<5K", vw_loans[loan_amnt]<10000,"5K-10K", vw_loans[loan_amnt]<20000,"10K-20K", vw_loans[loan_amnt]<30000,"20K-30K", "30K+")
+		dataType: string
+		displayFolder: Borrower Analysis
+		lineageTag: 8f59c61b-7b44-45cd-bad4-19a5f122a3ff
+		sortByColumn: 'Loan Amount Sort'
+
+	partition vw_loans = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("Surya\SQLEXPRESS", "Finance"),
+				    dbo_vw_loans = Source{[Schema="dbo",Item="vw_loans"]}[Data]
+				in
+				    dbo_vw_loans
+
+	annotation PBI_ResultType = Table
+

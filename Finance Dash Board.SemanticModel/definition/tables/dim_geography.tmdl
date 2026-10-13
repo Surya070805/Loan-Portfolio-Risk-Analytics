@@ -1,0 +1,79 @@
+table dim_geography
+	lineageTag: 8fd05c4b-7b46-4e8b-bfa0-a90bc264acb2
+
+	column geography_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 7e403819-3e6c-4e84-8799-75b6142f9524
+		summarizeBy: none
+		sourceColumn: geography_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column addr_state
+		dataType: string
+		lineageTag: ec7e1d36-e23c-4d0c-a62e-8109e21783ed
+		summarizeBy: none
+		sourceColumn: addr_state
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Hidden sort key to display regions in West, Midwest, South, Northeast order.
+	column 'Region Sort' = SWITCH(dim_geography[addr_state], "AZ",1,"CO",1,"ID",1,"MT",1,"NV",1,"NM",1,"UT",1,"WY",1,"AK",1,"CA",1,"HI",1,"OR",1,"WA",1, "IL",2,"IN",2,"MI",2,"OH",2,"WI",2,"IA",2,"KS",2,"MN",2,"MO",2,"NE",2,"ND",2,"SD",2, "DE",3,"FL",3,"GA",3,"MD",3,"NC",3,"SC",3,"VA",3,"DC",3,"WV",3,"AL",3,"KY",3,"MS",3,"TN",3,"AR",3,"LA",3,"OK",3,"TX",3, "CT",4,"ME",4,"MA",4,"NH",4,"RI",4,"VT",4,"NJ",4,"NY",4,"PA",4, 5)
+		dataType: int64
+		isHidden
+		displayFolder: Geographic Analysis
+		lineageTag: 489c661f-dd1b-4aa3-9bca-76f505840afe
+
+	/// US Census Bureau 4-region classification, mapped from addr_state.
+	column Region = SWITCH(dim_geography[addr_state], "AZ","West","CO","West","ID","West","MT","West","NV","West","NM","West","UT","West","WY","West","AK","West","CA","West","HI","West","OR","West","WA","West", "IL","Midwest","IN","Midwest","MI","Midwest","OH","Midwest","WI","Midwest","IA","Midwest","KS","Midwest","MN","Midwest","MO","Midwest","NE","Midwest","ND","Midwest","SD","Midwest", "DE","South","FL","South","GA","South","MD","South","NC","South","SC","South","VA","South","DC","South","WV","South","AL","South","KY","South","MS","South","TN","South","AR","South","LA","South","OK","South","TX","South", "CT","Northeast","ME","Northeast","MA","Northeast","NH","Northeast","RI","Northeast","VT","Northeast","NJ","Northeast","NY","Northeast","PA","Northeast", "Unknown")
+		dataType: string
+		displayFolder: Geographic Analysis
+		lineageTag: aabdae38-9786-4f88-a376-fe270f21a65e
+		sortByColumn: 'Region Sort'
+
+	/// Per-state default rate, computed once per dim_geography row via relationship context transition to vw_loans.
+	column 'State Default Rate' = VAR StateLoans = CALCULATE(COUNTROWS(vw_loans)) VAR StateBad = CALCULATE(COUNTROWS(vw_loans), vw_loans[loan_outcome]="Bad") RETURN DIVIDE(StateBad, StateLoans, 0)
+		dataType: double
+		formatString: 0.00%
+		displayFolder: Geographic Analysis
+		lineageTag: 1130baae-1385-4cb2-9941-cb752a9afcfb
+
+	/// Hidden sort key for Risk Segment, recalibrated to this dataset's actual state default rate range (7.7%-17.0%) rather than the wireframe's 10/15/25% cutoffs, which left the top bucket empty.
+	column 'Risk Segment Sort' = SWITCH(TRUE(), [State Default Rate]<0.11,1, [State Default Rate]<0.13,2, [State Default Rate]<0.15,3, 4)
+		dataType: int64
+		isHidden
+		displayFolder: Geographic Analysis
+		lineageTag: 6f370894-a91b-4c11-a443-3579e4e90962
+
+	/// Buckets each state by its own default rate into 4 risk tiers, calibrated to this dataset's actual range (Low <11%, Moderate 11-13%, Moderate-High 13-15%, High 15%+).
+	column 'Risk Segment' = SWITCH(TRUE(), [State Default Rate]<0.11,"Low Risk (<11%)", [State Default Rate]<0.13,"Moderate (11%-13%)", [State Default Rate]<0.15,"Moderate-High (13%-15%)", "High Risk (15%+)")
+		dataType: string
+		displayFolder: Geographic Analysis
+		lineageTag: 1d8b4c99-5d6a-4056-9cae-5a0a0468934d
+		sortByColumn: 'Risk Segment Sort'
+
+	/// Full state name with abbreviation in parentheses, e.g. California (CA), matching UI mockup.
+	column 'State Display' = SWITCH(dim_geography[addr_state], "AL","Alabama (AL)", "AK","Alaska (AK)", "AZ","Arizona (AZ)", "AR","Arkansas (AR)", "CA","California (CA)", "CO","Colorado (CO)", "CT","Connecticut (CT)", "DE","Delaware (DE)", "FL","Florida (FL)", "GA","Georgia (GA)", "HI","Hawaii (HI)", "ID","Idaho (ID)", "IL","Illinois (IL)", "IN","Indiana (IN)", "IA","Iowa (IA)", "KS","Kansas (KS)", "KY","Kentucky (KY)", "LA","Louisiana (LA)", "ME","Maine (ME)", "MD","Maryland (MD)", "MA","Massachusetts (MA)", "MI","Michigan (MI)", "MN","Minnesota (MN)", "MS","Mississippi (MS)", "MO","Missouri (MO)", "MT","Montana (MT)", "NE","Nebraska (NE)", "NV","Nevada (NV)", "NH","New Hampshire (NH)", "NJ","New Jersey (NJ)", "NM","New Mexico (NM)", "NY","New York (NY)", "NC","North Carolina (NC)", "ND","North Dakota (ND)", "OH","Ohio (OH)", "OK","Oklahoma (OK)", "OR","Oregon (OR)", "PA","Pennsylvania (PA)", "RI","Rhode Island (RI)", "SC","South Carolina (SC)", "SD","South Dakota (SD)", "TN","Tennessee (TN)", "TX","Texas (TX)", "UT","Utah (UT)", "VT","Vermont (VT)", "VA","Virginia (VA)", "WA","Washington (WA)", "WV","West Virginia (WV)", "WI","Wisconsin (WI)", "WY","Wyoming (WY)", "DC","District of Columbia (DC)", dim_geography[addr_state])
+		dataType: string
+		displayFolder: Geographic Analysis
+		lineageTag: 2d8b4c99-5d6a-4056-9cae-5a0a0468934e
+
+	/// Clean full US state name, e.g. California, for map visuals.
+	column 'State Name' = SWITCH(dim_geography[addr_state], "AL","Alabama", "AK","Alaska", "AZ","Arizona", "AR","Arkansas", "CA","California", "CO","Colorado", "CT","Connecticut", "DE","Delaware", "FL","Florida", "GA","Georgia", "HI","Hawaii", "ID","Idaho", "IL","Illinois", "IN","Indiana", "IA","Iowa", "KS","Kansas", "KY","Kentucky", "LA","Louisiana", "ME","Maine", "MD","Maryland", "MA","Massachusetts", "MI","Michigan", "MN","Minnesota", "MS","Mississippi", "MO","Missouri", "MT","Montana", "NE","Nebraska", "NV","Nevada", "NH","New Hampshire", "NJ","New Jersey", "NM","New Mexico", "NY","New York", "NC","North Carolina", "ND","North Dakota", "OH","Ohio", "OK","Oklahoma", "OR","Oregon", "PA","Pennsylvania", "RI","Rhode Island", "SC","South Carolina", "SD","South Dakota", "TN","Tennessee", "TX","Texas", "UT","Utah", "VT","Vermont", "VA","Virginia", "WA","Washington", "WV","West Virginia", "WI","Wisconsin", "WY","Wyoming", "DC","District of Columbia", dim_geography[addr_state])
+		dataType: string
+		displayFolder: Geographic Analysis
+		lineageTag: 3d8b4c99-5d6a-4056-9cae-5a0a0468934f
+		dataCategory: StateOrProvince
+
+	partition dim_geography = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("Surya\SQLEXPRESS", "Finance"),
+				    dbo_dim_geography = Source{[Schema="dbo",Item="dim_geography"]}[Data]
+				in
+				    dbo_dim_geography
+
+	annotation PBI_ResultType = Table
+

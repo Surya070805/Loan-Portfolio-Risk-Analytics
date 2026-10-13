@@ -1,0 +1,15 @@
+# Large raw data files (exceeding GitHub 100MB limit)
+*.csv
+*.tsv
+
+# Compressed archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Temp and OS cache files
+Thumbs.db
+.DS_Store
+*.tmp
+*.log

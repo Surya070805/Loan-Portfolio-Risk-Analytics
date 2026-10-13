@@ -1,0 +1,25 @@
+model Model
+	culture: en-IN
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-IN
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["dim_date","dim_geography","dim_grade","dim_purpose","vw_loans"]
+
+annotation PBI_ProTooling = ["MCP-PBIModeling","DevMode"]
+
+ref table dim_date
+ref table DateTableTemplate_d9ac49bd-7c6e-46a3-ab52-b29e8ab60bad
+ref table LocalDateTable_413ab506-2da0-495c-8a4c-f4be485f4dce
+ref table dim_geography
+ref table dim_grade
+ref table dim_purpose
+ref table vw_loans
+ref table dim_risk_profile
+
+ref cultureInfo en-IN
+

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "Finance Dash Board"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "81324f20-ddae-4abe-9fe4-eee9023b9fd2"
+  }
+}

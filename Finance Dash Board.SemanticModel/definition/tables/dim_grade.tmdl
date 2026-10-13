@@ -1,0 +1,39 @@
+table dim_grade
+	lineageTag: 6f54eedc-1676-4b63-8e5d-bc5ec4c0ebad
+
+	column grade_key
+		dataType: int64
+		formatString: 0
+		lineageTag: e491bb1c-518d-4e81-bc80-f7e6d705e4ac
+		summarizeBy: none
+		sourceColumn: grade_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column grade
+		dataType: string
+		lineageTag: 3da1202f-c35a-494a-bb3e-dd9e9eaac32b
+		summarizeBy: none
+		sourceColumn: grade
+
+		annotation SummarizationSetBy = Automatic
+
+	column sub_grade
+		dataType: string
+		lineageTag: bcbbfa66-9d94-4eae-ac2c-fc3f4dede350
+		summarizeBy: none
+		sourceColumn: sub_grade
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_grade = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("Surya\SQLEXPRESS", "Finance"),
+				    dbo_dim_grade = Source{[Schema="dbo",Item="dim_grade"]}[Data]
+				in
+				    dbo_dim_grade
+
+	annotation PBI_ResultType = Table
+

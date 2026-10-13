@@ -1,0 +1,21 @@
+relationship c385bc0d-2f7c-4fd5-a9e5-4d5f371897ec
+	joinOnDateBehavior: datePartOnly
+	fromColumn: dim_date.issue_d
+	toColumn: LocalDateTable_413ab506-2da0-495c-8a4c-f4be485f4dce.Date
+
+relationship AutoDetected_da1d966b-9577-4827-a856-890788db0356
+	fromColumn: vw_loans.addr_state
+	toColumn: dim_geography.addr_state
+
+relationship AutoDetected_fceedf7d-ffaa-4907-9546-572ead6f7420
+	fromColumn: vw_loans.sub_grade
+	toColumn: dim_grade.sub_grade
+
+relationship AutoDetected_793d039d-9d7b-4555-8357-4fa45ceba944
+	fromColumn: vw_loans.purpose
+	toColumn: dim_purpose.purpose
+
+relationship cdf0e7cf-2e98-9395-20d0-73b74819cc66
+	fromColumn: vw_loans.issue_d
+	toColumn: dim_date.issue_d
+

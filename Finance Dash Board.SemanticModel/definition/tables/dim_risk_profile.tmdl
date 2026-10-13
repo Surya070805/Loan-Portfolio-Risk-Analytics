@@ -1,0 +1,59 @@
+table dim_risk_profile
+	lineageTag: e39b986b-58f7-4180-87a4-0ef6be7c42cb
+
+	column Attribute
+		dataType: string
+		lineageTag: a7e39b98-58f7-4180-87a4-0ef6be7c42c1
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Attribute]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Low Risk Profile'
+		dataType: string
+		lineageTag: a7e39b98-58f7-4180-87a4-0ef6be7c42c2
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Low Risk Profile]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'High Risk Profile'
+		dataType: string
+		lineageTag: a7e39b98-58f7-4180-87a4-0ef6be7c42c3
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [High Risk Profile]
+
+		annotation SummarizationSetBy = Automatic
+
+	column SortOrder
+		dataType: int64
+		formatString: 0
+		lineageTag: a7e39b98-58f7-4180-87a4-0ef6be7c42c4
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [SortOrder]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_risk_profile = calculated
+		mode: import
+		source =
+				DATATABLE(
+				    "Attribute", STRING,
+				    "Low Risk Profile", STRING,
+				    "High Risk Profile", STRING,
+				    "SortOrder", INTEGER,
+				    {
+				        {"FICO Score", "720 and above", "Below 640", 1},
+				        {"DTI Ratio", "Below 15%", "Above 20%", 2},
+				        {"Annual Income", "Above $75K", "Below $35K", 3},
+				        {"Employment Length", "More than 5 years", "Less than 2 years", 4},
+				        {"Home Ownership", "Mortgage / Own", "Rent / Other", 5}
+				    }
+				)
+
+	annotation PBI_Id = 7a8b9c0d1e2f3a4b
+

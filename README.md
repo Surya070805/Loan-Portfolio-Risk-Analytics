@@ -12,8 +12,7 @@ Built using **Python, SQL Server (Star Schema), and modern Power BI Developer Mo
 ---
 
 ## Preview
-
-<img width="1918" height="900" alt="Loan Portfolio Risk Analytics Dashboard" src="https://github.com/user-attachments/assets/29356fc8-3bf6-4f1e-82a4-846494f8c91d" />
+<img width="1303" height="742" alt="image" src="https://github.com/user-attachments/assets/0e4e52e7-1b91-42aa-b7d7-9041a25a802f" />
 
 ---
 
